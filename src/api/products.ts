@@ -107,7 +107,7 @@ export const deleteSku = (id: number) => {
  * @returns {Promise} 更新结果
  */
 export const updateSkuStock = (id: number, data: UpdateStockParams) => {
-  return request.patch(`/admin/api/v1/skus/${id}`, { 
+  return request.patch(`/admin/api/v1/skus/${id}/stock`, { 
     stock: Number(data.stock) 
   })
 }

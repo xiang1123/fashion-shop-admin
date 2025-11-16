@@ -247,18 +247,8 @@
               <a @click="handleUpdateStock(record)">调整库存</a>
               <a-popconfirm
                 title="确定要删除这个 SKU 吗？"
-                ok-text="确定"
-                cancel-text="取消"
                 @confirm="handleDeleteSku(record.id)"
               >
-                <template #description>
-                  <div style="max-width: 300px">
-                    <p style="margin: 0">删除后将无法恢复</p>
-                    <p style="margin: 8px 0 0; color: #ff4d4f; font-size: 12px">
-                      注意：如果该 SKU 存在订单或库存记录，将无法删除
-                    </p>
-                  </div>
-                </template>
                 <a style="color: #ff4d4f">删除</a>
               </a-popconfirm>
             </a-space>
@@ -656,17 +646,9 @@ const handleDelete = async (id: number) => {
     await deleteProduct(id)
     message.success('删除成功')
     fetchList()
-  } catch (error: any) {
+  } catch (error) {
     console.error('删除失败:', error)
-
-    // 检查是否是外键约束错误
-    if (error.response?.status === 500) {
-      message.error(
-        '删除失败：该商品存在关联数据（如库存锁定记录），无法删除。请先清理相关数据或联系管理员。'
-      )
-    } else {
-      message.error('删除失败，请稍后重试')
-    }
+    message.error('删除失败')
   }
 }
 
@@ -777,31 +759,9 @@ const handleDeleteSku = async (id: number) => {
     if (currentProduct.value) {
       handleViewSkus(currentProduct.value)
     }
-  } catch (error: any) {
+  } catch (error) {
     console.error('删除失败:', error)
-
-    // 详细的错误处理
-    const status = error.response?.status
-    const errorMsg = error.response?.data?.message
-
-    if (status === 500 && errorMsg?.includes('foreign key constraint')) {
-      message.error({
-        content:
-          '删除失败：该 SKU 存在关联数据（如订单记录、库存锁定等），无法删除。建议：1. 先处理相关订单 2. 或使用"禁用"功能代替删除',
-        duration: 8,
-      })
-    } else if (status === 404) {
-      message.error('SKU 不存在或已被删除')
-      if (currentProduct.value) {
-        handleViewSkus(currentProduct.value)
-      }
-    } else if (status === 403) {
-      message.error('没有权限删除该 SKU')
-    } else if (errorMsg) {
-      message.error(errorMsg)
-    } else {
-      message.error('删除失败，请稍后重试')
-    }
+    message.error('删除失败')
   }
 }
 
@@ -862,6 +822,10 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.product-container {
+  padding: 24px;
+}
+
 .action-area {
   margin-bottom: 16px;
   padding: 16px 24px;

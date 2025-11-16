@@ -27,116 +27,70 @@ jobs:
     
     - name: Build Project
       run: pnpm run build
+      env:
+        NODE_ENV: production
     
-    - name: Package Build Files
+    - name: List Build Files
       run: |
-        echo "打包构建文件..."
-        cd dist
-        tar -czf ../dist.tar.gz .
-        cd ..
-        echo "打包完成！"
-        ls -lh dist.tar.gz
+        echo "构建完成！"
+        echo "构建文件列表："
+        ls -lah dist/
+        echo "=========================================="
+        echo "index.html 内容预览："
+        head -n 5 dist/index.html
     
-    - name: Deploy via SSH
+    # ⬇️ 新增：清理旧文件
+    - name: Clean Old Files
       uses: appleboy/ssh-action@v0.1.10
       with:
         host: ${{ secrets.SERVER_HOST }}
         username: ${{ secrets.SERVER_USER }}
         key: ${{ secrets.SERVER_SSH_KEY }}
         script: |
-          # 准备临时目录
-          mkdir -p /tmp/fashion-deploy
-          
-    - name: Upload Package
-      run: |
-        echo "上传文件到服务器..."
-        scp -o StrictHostKeyChecking=no -i <(echo "${{ secrets.SERVER_SSH_KEY }}") dist.tar.gz ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/fashion-deploy/
-    
-    - name: Extract and Deploy
-      uses: appleboy/ssh-action@v0.1.10
-      with:
-        host: ${{ secrets.SERVER_HOST }}
-        username: ${{ secrets.SERVER_USER }}
-        key: ${{ secrets.SERVER_SSH_KEY }}
-        script: |
-          set -e
-          
-          echo "=========================================="
-          echo "开始部署: $(date)"
-          echo "=========================================="
-          
-          # 备份
-          if [ -d "${{ secrets.SERVER_PATH }}" ] && [ "$(ls -A ${{ secrets.SERVER_PATH }})" ]; then
-            BACKUP_DIR="${{ secrets.SERVER_PATH }}.backup.$(date +%Y%m%d_%H%M%S)"
-            echo "备份到: $BACKUP_DIR"
-            sudo cp -r ${{ secrets.SERVER_PATH }} $BACKUP_DIR
-          fi
-          
-          # 清空并解压
-          echo "清空目标目录..."
+          echo "清理旧文件..."
           sudo rm -rf ${{ secrets.SERVER_PATH }}/*
-          
-          echo "解压文件..."
-          sudo tar -xzf /tmp/fashion-deploy/dist.tar.gz -C ${{ secrets.SERVER_PATH }}/
-          
-          # 权限
-          echo "设置权限..."
-          sudo chown -R www-data:www-data ${{ secrets.SERVER_PATH }} 2>/dev/null || sudo chown -R nginx:nginx ${{ secrets.SERVER_PATH }}
-          sudo chmod -R 755 ${{ secrets.SERVER_PATH }}
-          
-          # 验证
-          echo "=========================================="
-          echo "部署文件列表:"
-          ls -lah ${{ secrets.SERVER_PATH }} | head -n 15
-          
-          echo "=========================================="
-          echo "index.html 内容:"
-          head -n 3 ${{ secrets.SERVER_PATH }}/index.html
-          
-          # Nginx
-          echo "=========================================="
-          echo "处理 Nginx..."
-          
-          # 测试配置
-          sudo nginx -t
-          
-          # 启动或重载
-          if pgrep nginx > /dev/null; then
-            echo "重新加载 Nginx..."
-            sudo systemctl reload nginx || sudo nginx -s reload
-          else
-            echo "启动 Nginx..."
-            sudo systemctl start nginx || sudo /usr/sbin/nginx
-          fi
-          
-          # 等待并检查
-          sleep 3
-          
-          if pgrep nginx > /dev/null; then
-            echo "✅ Nginx 运行正常"
-            echo "进程信息:"
-            ps aux | grep nginx | grep -v grep | head -n 3
-          else
-            echo "❌ Nginx 未运行"
-            exit 1
-          fi
-          
-          # 清理
-          echo "=========================================="
-          echo "清理临时文件..."
-          rm -rf /tmp/fashion-deploy
-          
-          echo "=========================================="
-          echo "✅ 部署完成！"
-          echo "时间: $(date)"
-          echo "访问: http://www.yyzzhhh.work.gd"
-          echo "=========================================="
+          echo "清理完成！"
     
-    - name: Test Deployment
-      run: |
-        echo "测试网站访问..."
-        sleep 5
-        curl -I http://${{ secrets.SERVER_HOST }} || echo "网站可能还在启动中..."
+    # 部署到服务器
+    - name: Deploy to Server
+      uses: appleboy/scp-action@v0.1.4
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        source: "dist/*"
+        target: ${{ secrets.SERVER_PATH }}
+        strip_components: 1
+        overwrite: true  # ⬅️ 添加覆盖选项
+    
+    # 验证部署
+    - name: Verify Deployment
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        script: |
+          echo "=========================================="
+          echo "部署验证"
+          echo "=========================================="
+          echo "部署目录内容："
+          ls -lah ${{ secrets.SERVER_PATH }}
+          echo "=========================================="
+          echo "index.html 文件信息："
+          ls -lh ${{ secrets.SERVER_PATH }}/index.html
+          echo "=========================================="
+          echo "index.html 内容预览："
+          head -n 10 ${{ secrets.SERVER_PATH }}/index.html
+          echo "=========================================="
+          echo "设置文件权限..."
+          sudo chown -R www-data:www-data ${{ secrets.SERVER_PATH }}
+          sudo chmod -R 755 ${{ secrets.SERVER_PATH }}
+          echo "=========================================="
+          echo "重启 Nginx..."
+          sudo systemctl reload nginx
+          echo "✅ 部署完成！"
+          echo "访问: http://www.yyzzhhh.work.gd"
     
     - name: Deployment Result
       if: always()
@@ -145,5 +99,5 @@ jobs:
           echo "🎉 部署成功！"
           echo "访问: http://www.yyzzhhh.work.gd"
         else
-          echo "❌ 部署失败，请检查日志"
+          echo "❌ 部署失败"
         fi
