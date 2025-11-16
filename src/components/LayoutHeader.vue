@@ -89,10 +89,10 @@ const handleToggle = () => {
 
 const handleMenuClick = ({ key }: { key: string }) => {
   if (key === 'logout') {
+    userStore.logout()
     message.success('退出登录成功')
-    return
+    return router.push('/login')
   }
-  router.push(key)
 }
 </script>
 
