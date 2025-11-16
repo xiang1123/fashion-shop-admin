@@ -58,8 +58,8 @@ import {
   MenuFoldOutlined,
   BellOutlined,
   UserOutlined,
-  SettingOutlined,
   LogoutOutlined,
+  DownOutlined,
 } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 
