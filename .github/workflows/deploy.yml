@@ -18,7 +18,7 @@ jobs:
     - name: Install pnpm
       uses: pnpm/action-setup@v2
       with:
-        version: 8  # 指定 pnpm 版本，可以改为 latest
+        version: 10  # 指定 pnpm 版本，可以改为 latest
     
     # 3. 设置 Node.js
     - name: Setup Node.js
