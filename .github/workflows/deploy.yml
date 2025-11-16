@@ -1,0 +1,92 @@
+name: Deploy Fashion Shop Admin
+
+on:
+  push:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    # 1. 检出代码
+    - name: Checkout Code
+      uses: actions/checkout@v3
+    
+    # 2. 安装 pnpm
+    - name: Install pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8  # 指定 pnpm 版本，可以改为 latest
+    
+    # 3. 设置 Node.js
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'pnpm'  # 使用 pnpm 缓存
+    
+    # 4. 安装依赖
+    - name: Install Dependencies
+      run: pnpm install --frozen-lockfile  # 使用 pnpm 安装
+    
+    # 5. 构建项目
+    - name: Build Project
+      run: pnpm run build  # 使用 pnpm 构建
+      env:
+        NODE_ENV: production
+    
+    # 6. 显示构建文件
+    - name: List Build Files
+      run: |
+        echo "构建完成，文件列表："
+        ls -lah dist/
+    
+    # 7. 部署到服务器
+    - name: Deploy to Server
+      uses: appleboy/scp-action@v0.1.4
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        source: "dist/*"
+        target: ${{ secrets.SERVER_PATH }}
+        strip_components: 1
+        rm: true
+    
+    # 8. 重启 Nginx
+    - name: Restart Nginx
+      uses: appleboy/ssh-action@v0.1.10
+      with:
+        host: ${{ secrets.SERVER_HOST }}
+        username: ${{ secrets.SERVER_USER }}
+        key: ${{ secrets.SERVER_SSH_KEY }}
+        script: |
+          echo "=========================================="
+          echo "部署完成！"
+          echo "时间: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo "=========================================="
+          echo "部署目录内容："
+          ls -lah ${{ secrets.SERVER_PATH }}
+          echo "=========================================="
+          echo "重启 Nginx..."
+          sudo systemctl reload nginx
+          echo "Nginx 状态："
+          sudo systemctl status nginx --no-pager
+          echo "=========================================="
+          echo "✅ 部署成功！"
+          echo "访问地址："
+          echo "  - http://8.216.6.228"
+          echo "  - http://www.yyzzhhh.work.gd"
+    
+    # 9. 通知
+    - name: Deployment Result
+      if: always()
+      run: |
+        if [ ${{ job.status }} == 'success' ]; then
+          echo "🎉 部署成功！"
+          echo "访问: http://www.yyzzhhh.work.gd"
+        else
+          echo "❌ 部署失败，请检查日志"
+        fi
