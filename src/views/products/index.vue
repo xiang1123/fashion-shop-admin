@@ -555,7 +555,7 @@ const skuColumns = [
 const fetchList = async () => {
   try {
     loading.value = true
-    const res = await getProductList()
+    const res: any = await getProductList()
 
     if (res.code === 0 && res.data) {
       list.value = res.data
@@ -693,7 +693,7 @@ const handleViewSkus = async (record: ProductInfo) => {
   currentProduct.value = record
   try {
     skuLoading.value = true
-    const res = await getProductSkus(record.id)
+    const res: any = await getProductSkus(record.id)
 
     if (res.code === 0 && res.data) {
       skuList.value = res.data
