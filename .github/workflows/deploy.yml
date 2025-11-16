@@ -24,7 +24,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '18'
+        node-version: '23.11.1'
         cache: 'pnpm'  # 使用 pnpm 缓存
     
     # 4. 安装依赖
