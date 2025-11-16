@@ -674,7 +674,7 @@ const skuRules = {
 // SKU 表格列定义
 const skuColumns = [
   { title: 'ID', dataIndex: 'id', width: 80 },
-  { title: 'SKU 编码', dataIndex: 'sku_code', width: 150 },
+  { title: 'SKU 编码', dataIndex: 'sku_code', width: 200 },
   { title: '颜色', dataIndex: 'color', width: 100 },
   { title: '尺码', dataIndex: 'size', width: 80 },
   {
@@ -699,7 +699,7 @@ const skuColumns = [
   {
     title: '操作',
     key: 'action',
-    width: 200,
+    width: 210,
     fixed: 'right',
     slots: { customRender: 'action' },
   },
