@@ -2,7 +2,7 @@
   <div class="product-container">
     <!-- 操作区域 -->
     <div class="action-area">
-      <a-button type="primary" @click="handleAdd">
+      <a-button type="primary" @click="handleAdd" v-debounce:click.300>
         <template #icon>
           <plus-outlined />
         </template>
@@ -10,15 +10,80 @@
       </a-button>
     </div>
 
+    <!-- 搜索区域 -->
+    <div class="search-area">
+      <a-form layout="inline">
+        <a-form-item label="商品名称">
+          <a-input
+            v-model:value="searchText"
+            placeholder="请输入商品名称"
+            allow-clear
+            style="width: 200px"
+            v-debounce:input.300="handleSearch"
+          />
+        </a-form-item>
+        <a-form-item label="商品状态">
+          <a-select
+            v-model:value="searchStatus"
+            placeholder="请选择状态"
+            allow-clear
+            style="width: 120px"
+            v-debounce:change.300="handleSearch"
+          >
+            <a-select-option value="ON_SALE">在售</a-select-option>
+            <a-select-option value="OFF_SALE">下架</a-select-option>
+            <a-select-option value="SOLD_OUT">售罄</a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item>
+          <a-button type="primary" @click="handleSearch" v-debounce:click.300
+            >搜索</a-button
+          >
+          <a-button
+            style="margin-left: 8px"
+            @click="handleReset"
+            v-debounce:click.300
+            >重置</a-button
+          >
+        </a-form-item>
+      </a-form>
+    </div>
+
     <!-- 表格区域 -->
     <div class="table-area">
+      <!-- 骨架屏 -->
+      <a-skeleton
+        v-if="loading"
+        active
+        :paragraph="{ rows: 6 }"
+        :title="{ width: '40%' }"
+      />
+
+      <!-- 空状态 -->
+      <a-empty v-else-if="currentList.length === 0" description="暂无商品数据">
+        <template #image>
+          <svg style="width: 64px; height: 64px" viewBox="64 864 864 864">
+            <path
+              fill="#e6e6e6"
+              d="M832 64H192c-17.7 0-32 14.3-32 32v640c0 17.7 14.3 32 32 32h640c17.7 0 32-14.3 32-32V96c0-17.7-14.3-32-32-32zm-600 72h560v208H232V136zm560 480H232V416h560v200zm-262-256H232v-72h298v72z"
+            />
+          </svg>
+        </template>
+        <a-button type="primary" @click="handleAdd" v-debounce:click.300
+          >立即创建</a-button
+        >
+      </a-empty>
+
+      <!-- 表格 -->
       <a-table
+        v-else
         :columns="columns"
         :data-source="currentList"
         :loading="loading"
         :pagination="pagination"
         @change="handleTableChange"
         row-key="id"
+        v-throttle:resize.100="handleTableResize"
       >
         <!-- 封面图片列 -->
         <template #cover="{ text }">
@@ -27,6 +92,7 @@
             :width="80"
             :height="80"
             style="object-fit: cover; border-radius: 4px"
+            :fallback="defaultImage"
           />
         </template>
 
@@ -37,15 +103,34 @@
           </a-tag>
         </template>
 
+        <!-- 商品名称列（XSS防护）-->
+        <template #title="{ text }">
+          <div v-html="sanitizeHtml(text)"></div>
+        </template>
+
+        <!-- 商品副标题列（XSS防护）-->
+        <template #subtitle="{ text }">
+          <div v-html="sanitizeHtml(text)"></div>
+        </template>
+
         <!-- 操作列 -->
         <template #action="{ record }">
           <a-space>
-            <a @click="handleViewSkus(record)">查看SKU</a>
-            <a @click="handleEdit(record)">编辑</a>
+            <a @click="handleViewSkus(record)" v-debounce:click.300>查看SKU</a>
+            <a @click="handleEdit(record)" v-debounce:click.300>编辑</a>
             <a-popconfirm
               title="确定要删除这个商品吗？"
               @confirm="handleDelete(record.id)"
+              v-debounce:confirm.300
             >
+              <template #description>
+                <div style="max-width: 300px">
+                  <p style="margin: 0">删除后将无法恢复</p>
+                  <p style="margin: 8px 0 0; color: #ff4d4f; font-size: 12px">
+                    注意：如果该商品存在订单或库存记录，将无法删除
+                  </p>
+                </div>
+              </template>
               <a style="color: #ff4d4f">删除</a>
             </a-popconfirm>
           </a-space>
@@ -60,6 +145,7 @@
       width="800px"
       @ok="handleSubmit"
       @cancel="handleCancel"
+      v-debounce:ok.300
     >
       <a-form
         ref="formRef"
@@ -72,6 +158,7 @@
           <a-input
             v-model:value="formData.title"
             placeholder="请输入商品标题"
+            v-debounce:input.300
           />
         </a-form-item>
 
@@ -79,6 +166,7 @@
           <a-input
             v-model:value="formData.subtitle"
             placeholder="请输入商品副标题"
+            v-debounce:input.300
           />
         </a-form-item>
 
@@ -87,6 +175,7 @@
             v-model:value="formData.description"
             placeholder="请输入商品描述"
             :rows="3"
+            v-debounce:input.300
           />
         </a-form-item>
 
@@ -96,6 +185,7 @@
             placeholder="请输入分类ID"
             :min="1"
             style="width: 100%"
+            v-debounce:change.300
           />
         </a-form-item>
 
@@ -103,12 +193,14 @@
           <a-input
             v-model:value="formData.cover_image"
             placeholder="请输入图片地址"
+            v-debounce:input.300
           />
           <div v-if="formData.cover_image" class="image-preview">
             <a-image
               :src="formData.cover_image"
               :width="200"
               style="margin-top: 8px; border-radius: 4px"
+              :fallback="defaultImage"
             />
           </div>
         </a-form-item>
@@ -131,10 +223,18 @@
             >
               <a-row :gutter="16">
                 <a-col :span="6">
-                  <a-input v-model:value="sku.color" placeholder="颜色" />
+                  <a-input
+                    v-model:value="sku.color"
+                    placeholder="颜色"
+                    v-debounce:input.300
+                  />
                 </a-col>
                 <a-col :span="6">
-                  <a-input v-model:value="sku.size" placeholder="尺码" />
+                  <a-input
+                    v-model:value="sku.size"
+                    placeholder="尺码"
+                    v-debounce:input.300
+                  />
                 </a-col>
                 <a-col :span="6">
                   <a-input-number
@@ -142,6 +242,7 @@
                     placeholder="价格"
                     :min="0"
                     style="width: 100%"
+                    v-debounce:change.300
                   />
                 </a-col>
                 <a-col :span="4">
@@ -150,6 +251,7 @@
                     placeholder="库存"
                     :min="0"
                     style="width: 100%"
+                    v-debounce:change.300
                   />
                 </a-col>
                 <a-col :span="2">
@@ -158,6 +260,7 @@
                     danger
                     @click="removeSku(index)"
                     :disabled="formData.skus.length === 1"
+                    v-debounce:click.300
                   >
                     <template #icon>
                       <delete-outlined />
@@ -170,12 +273,14 @@
                   <a-input
                     v-model:value="sku.sku_code"
                     placeholder="SKU 编码"
+                    v-debounce:input.300
                   />
                 </a-col>
                 <a-col :span="12">
                   <a-input
                     v-model:value="sku.image"
                     placeholder="SKU 图片地址"
+                    v-debounce:input.300
                   />
                 </a-col>
               </a-row>
@@ -185,6 +290,7 @@
               block
               @click="addSku"
               style="margin-top: 16px"
+              v-debounce:click.300
             >
               <template #icon>
                 <plus-outlined />
@@ -199,7 +305,7 @@
     <!-- SKU 管理模态框 -->
     <a-modal
       v-model:visible="skuModalVisible"
-      :title="`SKU 管理 - ${currentProduct?.title}`"
+      :title="`SKU 管理 - ${sanitizeHtml(currentProduct?.title)}`"
       width="900px"
       :footer="null"
     >
@@ -208,6 +314,7 @@
           type="primary"
           @click="handleAddSku"
           style="margin-bottom: 16px"
+          v-debounce:click.300
         >
           <template #icon>
             <plus-outlined />
@@ -215,13 +322,27 @@
           新增 SKU
         </a-button>
 
+        <!-- SKU 骨架屏 -->
+        <a-skeleton v-if="skuLoading" active :paragraph="{ rows: 4 }" />
+
+        <!-- SKU 空状态 -->
+        <a-empty v-else-if="skuList.length === 0" description="暂无 SKU 数据">
+          <a-button type="primary" @click="handleAddSku" v-debounce:click.300
+            >立即创建</a-button
+          >
+        </a-empty>
+
+        <!-- SKU 表格 -->
         <a-table
+          v-else
           :columns="skuColumns"
           :data-source="skuList"
           :loading="skuLoading"
           :pagination="false"
           row-key="id"
+          v-throttle:resize.100="handleTableResize"
         >
+          <!-- 图片列 -->
           <template #image="{ text }">
             <a-image
               v-if="text"
@@ -229,25 +350,32 @@
               :width="60"
               :height="60"
               style="object-fit: cover; border-radius: 4px"
+              :fallback="defaultImage"
             />
             <span v-else>-</span>
           </template>
 
+          <!-- 价格列 -->
           <template #price="{ text }"> ¥{{ text }} </template>
 
+          <!-- 状态列 -->
           <template #active="{ text }">
             <a-tag :color="text === 1 ? 'green' : 'red'">
               {{ text === 1 ? '启用' : '禁用' }}
             </a-tag>
           </template>
 
+          <!-- 操作列 -->
           <template #action="{ record }">
             <a-space>
-              <a @click="handleEditSku(record)">编辑</a>
-              <a @click="handleUpdateStock(record)">调整库存</a>
+              <a @click="handleEditSku(record)" v-debounce:click.300>编辑</a>
+              <a @click="handleUpdateStock(record)" v-debounce:click.300
+                >调整库存</a
+              >
               <a-popconfirm
                 title="确定要删除这个 SKU 吗？"
                 @confirm="handleDeleteSku(record.id)"
+                v-debounce:confirm.300
               >
                 <a style="color: #ff4d4f">删除</a>
               </a-popconfirm>
@@ -264,6 +392,7 @@
       width="600px"
       @ok="handleSkuSubmit"
       @cancel="handleSkuCancel"
+      v-debounce:ok.300
     >
       <a-form
         ref="skuFormRef"
@@ -276,15 +405,24 @@
           <a-input
             v-model:value="skuFormData.sku_code"
             placeholder="请输入 SKU 编码"
+            v-debounce:input.300
           />
         </a-form-item>
 
         <a-form-item label="颜色" name="color">
-          <a-input v-model:value="skuFormData.color" placeholder="请输入颜色" />
+          <a-input
+            v-model:value="skuFormData.color"
+            placeholder="请输入颜色"
+            v-debounce:input.300
+          />
         </a-form-item>
 
         <a-form-item label="尺码" name="size">
-          <a-input v-model:value="skuFormData.size" placeholder="请输入尺码" />
+          <a-input
+            v-model:value="skuFormData.size"
+            placeholder="请输入尺码"
+            v-debounce:input.300
+          />
         </a-form-item>
 
         <a-form-item label="价格" name="price">
@@ -293,6 +431,7 @@
             placeholder="请输入价格"
             :min="0"
             style="width: 100%"
+            v-debounce:change.300
           />
         </a-form-item>
 
@@ -302,6 +441,7 @@
             placeholder="请输入库存"
             :min="0"
             style="width: 100%"
+            v-debounce:change.300
           />
         </a-form-item>
 
@@ -309,12 +449,14 @@
           <a-input
             v-model:value="skuFormData.image"
             placeholder="请输入图片地址"
+            v-debounce:input.300
           />
           <div v-if="skuFormData.image" class="image-preview">
             <a-image
               :src="skuFormData.image"
               :width="150"
               style="margin-top: 8px; border-radius: 4px"
+              :fallback="defaultImage"
             />
           </div>
         </a-form-item>
@@ -323,6 +465,7 @@
           <a-input
             v-model:value="skuFormData.bar_code"
             placeholder="请输入条形码"
+            v-debounce:input.300
           />
         </a-form-item>
       </a-form>
@@ -335,6 +478,7 @@
       width="400px"
       @ok="handleStockSubmit"
       @cancel="handleStockCancel"
+      v-debounce:ok.300
     >
       <a-form :label-col="{ span: 6 }" :wrapper-col="{ span: 17 }">
         <a-form-item label="当前库存">
@@ -350,6 +494,7 @@
             :min="0"
             placeholder="请输入新库存"
             style="width: 100%"
+            v-debounce:change.300
           />
         </a-form-item>
       </a-form>
@@ -359,6 +504,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import DOMPurify from 'dompurify'
 import {
   getProductList,
   createProduct,
@@ -375,9 +521,16 @@ import type { FormInstance } from 'ant-design-vue'
 import { message } from 'ant-design-vue'
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 
+// 默认图片
+const defaultImage = 'https://api.dicebear.com/7.x/shapes/svg?seed=Default'
+
 // 列表数据
 const list = ref<ProductInfo[]>([])
 const loading = ref(false)
+
+// 搜索条件
+const searchText = ref('')
+const searchStatus = ref<'ON_SALE' | 'OFF_SALE' | 'SOLD_OUT' | undefined>()
 
 // 分页参数
 const currentPage = ref(1)
@@ -419,6 +572,67 @@ const rules = {
   status: [{ required: true, message: '请选择商品状态', trigger: 'change' }],
 }
 
+// XSS防护函数
+const sanitizeHtml = (html: string) => {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['b', 'i', 'em', 'strong'],
+    ALLOWED_ATTR: [],
+  })
+}
+
+// 计算当前页数据
+const currentList = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return list.value.slice(start, end)
+})
+
+// 分页配置
+const pagination = computed(() => ({
+  total: list.value.length,
+  current: currentPage.value,
+  pageSize: pageSize.value,
+  showSizeChanger: true,
+  showQuickJumper: true,
+  showTotal: (total: number) => `共 ${total} 条`,
+  pageSizeOptions: ['10', '20', '50', '100'],
+}))
+
+// 表格列定义
+const columns = [
+  { title: 'ID', dataIndex: 'id', width: 80 },
+  {
+    title: '封面',
+    dataIndex: 'cover_image',
+    width: 100,
+    slots: { customRender: 'cover' },
+  },
+  {
+    title: '商品标题',
+    dataIndex: 'title',
+    slots: { customRender: 'title' },
+  },
+  {
+    title: '商品副标题',
+    dataIndex: 'subtitle',
+    slots: { customRender: 'subtitle' },
+  },
+  { title: '分类ID', dataIndex: 'category_id', width: 100 },
+  {
+    title: '状态',
+    dataIndex: 'status',
+    width: 100,
+    slots: { customRender: 'status' },
+  },
+  {
+    title: '操作',
+    key: 'action',
+    width: 200,
+    fixed: 'right',
+    slots: { customRender: 'action' },
+  },
+]
+
 // SKU 管理
 const skuModalVisible = ref(false)
 const currentProduct = ref<ProductInfo | null>(null)
@@ -457,60 +671,10 @@ const skuRules = {
   stock: [{ required: true, message: '请输入库存', trigger: 'blur' }],
 }
 
-// 库存调整
-const stockModalVisible = ref(false)
-const currentSku = ref<SkuInfo | null>(null)
-const newStock = ref(0)
-
-// 计算当前页数据
-const currentList = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value
-  const end = start + pageSize.value
-  return list.value.slice(start, end)
-})
-
-// 分页配置
-const pagination = computed(() => ({
-  total: list.value.length,
-  current: currentPage.value,
-  pageSize: pageSize.value,
-  showSizeChanger: true,
-  showQuickJumper: true,
-  showTotal: (total: number) => `共 ${total} 条`,
-  pageSizeOptions: ['10', '20', '50', '100'],
-}))
-
-// 表格列定义
-const columns = [
-  { title: 'ID', dataIndex: 'id', width: 80 },
-  {
-    title: '封面',
-    dataIndex: 'cover_image',
-    width: 100,
-    slots: { customRender: 'cover' },
-  },
-  { title: '商品标题', dataIndex: 'title' },
-  { title: '商品副标题', dataIndex: 'subtitle' },
-  { title: '分类ID', dataIndex: 'category_id', width: 100 },
-  {
-    title: '状态',
-    dataIndex: 'status',
-    width: 100,
-    slots: { customRender: 'status' },
-  },
-  {
-    title: '操作',
-    key: 'action',
-    width: 200,
-    fixed: 'right',
-    slots: { customRender: 'action' },
-  },
-]
-
 // SKU 表格列定义
 const skuColumns = [
   { title: 'ID', dataIndex: 'id', width: 80 },
-  { title: 'SKU 编码', dataIndex: 'sku_code' },
+  { title: 'SKU 编码', dataIndex: 'sku_code', width: 150 },
   { title: '颜色', dataIndex: 'color', width: 100 },
   { title: '尺码', dataIndex: 'size', width: 80 },
   {
@@ -541,11 +705,16 @@ const skuColumns = [
   },
 ]
 
+// 库存调整
+const stockModalVisible = ref(false)
+const currentSku = ref<SkuInfo | null>(null)
+const newStock = ref(0)
+
 // 获取商品列表
 const fetchList = async () => {
   try {
     loading.value = true
-    const res: any = await getProductList()
+    const res = await getProductList()
 
     if (res.code === 0 && res.data) {
       list.value = res.data
@@ -558,10 +727,30 @@ const fetchList = async () => {
   }
 }
 
+// 搜索
+const handleSearch = () => {
+  currentPage.value = 1
+  fetchList()
+}
+
+// 重置
+const handleReset = () => {
+  searchText.value = ''
+  searchStatus.value = undefined
+  currentPage.value = 1
+  fetchList()
+}
+
 // 表格变化
 const handleTableChange = (pag: any) => {
   currentPage.value = pag.current
   pageSize.value = pag.pageSize
+  fetchList()
+}
+
+// 表格大小改变
+const handleTableResize = () => {
+  // 可以在这里处理表格大小改变的逻辑
 }
 
 // 新增商品
@@ -675,7 +864,7 @@ const handleViewSkus = async (record: ProductInfo) => {
   currentProduct.value = record
   try {
     skuLoading.value = true
-    const res: any = await getProductSkus(record.id)
+    const res = await getProductSkus(record.id)
 
     if (res.code === 0 && res.data) {
       skuList.value = res.data
@@ -706,7 +895,7 @@ const handleAddSku = () => {
 
 // 编辑 SKU
 const handleEditSku = (record: SkuInfo) => {
-  editingSkuId.value = record.id!
+  editingSkuId.value = record.id
   Object.assign(skuFormData, record)
   skuFormVisible.value = true
 }
@@ -829,10 +1018,18 @@ onMounted(() => {
   border-radius: 4px;
 }
 
+.search-area {
+  /* margin-bottom: 16px; */
+  padding: 0 24px;
+  background: #fff;
+  border-radius: 4px;
+}
+
 .table-area {
   background: #fff;
   border-radius: 4px;
   padding: 24px;
+  min-height: 400px;
 }
 
 .image-preview {
@@ -860,16 +1057,15 @@ onMounted(() => {
   padding: 16px 0;
 }
 
-.modal-footer {
-  margin-top: 24px;
-  text-align: right;
-}
-
 :deep(.ant-form-item) {
   margin-bottom: 24px;
 }
 
-:deep(.ant-descriptions-item-label) {
-  font-weight: 500;
+:deep(.ant-empty) {
+  margin: 60px 0;
+}
+
+:deep(.ant-skeleton) {
+  padding: 24px;
 }
 </style>

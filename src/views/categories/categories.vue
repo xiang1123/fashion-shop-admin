@@ -2,7 +2,7 @@
   <div class="category-container">
     <!-- 操作区域 -->
     <div class="action-area">
-      <a-button type="primary" @click="handleAdd">
+      <a-button type="primary" @click="handleAdd" v-debounce:click.300>
         <template #icon>
           <plus-outlined />
         </template>
@@ -12,7 +12,30 @@
 
     <!-- 表格区域 -->
     <div class="table-area">
+      <!-- 骨架屏 -->
+      <a-skeleton
+        v-if="loading"
+        active
+        :paragraph="{ rows: 6 }"
+        :title="{ width: '40%' }"
+      />
+
+      <!-- 空状态 -->
+      <a-empty v-else-if="treeData.length === 0" description="暂无分类数据">
+        <template #image>
+          <svg style="width: 64px; height: 64px" viewBox="64 864 864 864">
+            <path
+              fill="#e6e6e6"
+              d="M832 64H192c-17.7 0-32 14.3-32 32v640c0 17.7 14.3 32 32 32h640c17.7 0 32-14.3 32-32V96c0-17.7-14.3-32-32-32zm-600 72h560v208H232V136zm560 480H232V416h560v200zm-262-256H232v-72h298v72z"
+            />
+          </svg>
+        </template>
+        <a-button type="primary" @click="handleAdd">立即创建</a-button>
+      </a-empty>
+
+      <!-- 表格 -->
       <a-table
+        v-else
         :columns="columns"
         :data-source="treeData"
         :loading="loading"
@@ -34,16 +57,26 @@
           </a-tag>
         </template>
 
+        <!-- 名称列（XSS防护）-->
+        <template #name="{ text }">
+          <div v-html="sanitizeHtml(text)"></div>
+        </template>
+
         <!-- 操作列 -->
         <template #action="{ record }">
           <a-space>
-            <a v-if="record.level === 1" @click="handleAddChild(record)"
-              >添加子分类</a
+            <a
+              v-if="record.level === 1"
+              @click="handleAddChild(record)"
+              v-debounce:click.300
             >
-            <a @click="handleEdit(record)">编辑</a>
+              添加子分类
+            </a>
+            <a @click="handleEdit(record)" v-debounce:click.300>编辑</a>
             <a-popconfirm
               title="确定要删除这个分类吗？"
               @confirm="handleDelete(record.id)"
+              v-debounce:confirm.300
             >
               <template #description>
                 <div style="max-width: 300px">
@@ -67,6 +100,7 @@
       width="600px"
       @ok="handleSubmit"
       @cancel="handleCancel"
+      v-debounce:ok.300
     >
       <a-form
         ref="formRef"
@@ -82,19 +116,25 @@
             placeholder="请选择上级分类（不选则为一级分类）"
             allow-clear
             tree-default-expand-all
+            v-debounce:change.300
           />
         </a-form-item>
 
         <a-form-item label="分类名称" name="name">
-          <a-input v-model:value="formData.name" placeholder="请输入分类名称" />
+          <a-input
+            v-model:value="formData.name"
+            placeholder="请输入分类名称"
+            v-debounce:input.300
+          />
         </a-form-item>
 
         <a-form-item label="排序" name="sort_order">
           <a-input-number
             v-model:value="formData.sort_order"
-            :min="0"
             placeholder="请输入排序值"
+            :min="0"
             style="width: 100%"
+            v-debounce:change.300
           />
         </a-form-item>
 
@@ -111,6 +151,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import DOMPurify from 'dompurify'
 import {
   getCategoryList,
   createCategory,
@@ -150,10 +191,18 @@ const rules = {
   sort_order: [{ required: true, message: '请输入排序值', trigger: 'blur' }],
 }
 
+// XSS防护函数
+const sanitizeHtml = (html: string) => {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['b', 'i', 'em', 'strong'],
+    ALLOWED_ATTR: [],
+  })
+}
+
 // 表格列定义
 const columns = [
-  { title: 'ID', dataIndex: 'id', width: 120},
-  { title: '分类名称', dataIndex: 'name' },
+  { title: 'ID', dataIndex: 'id', width: 120 },
+  { title: '分类名称', dataIndex: 'name', slots: { customRender: 'name' } },
   {
     title: '层级',
     dataIndex: 'level',
@@ -210,7 +259,7 @@ const parentOptions = computed(() => {
     .filter((item) => item.level === 1)
     .map((item) => ({
       value: item.id,
-      title: item.name,
+      title: sanitizeHtml(item.name),
       key: item.id,
     }))
 })
@@ -346,9 +395,18 @@ onMounted(() => {
   background: #fff;
   border-radius: 4px;
   padding: 24px;
+  min-height: 400px;
 }
 
 :deep(.ant-form-item) {
   margin-bottom: 24px;
+}
+
+:deep(.ant-empty) {
+  margin: 60px 0;
+}
+
+:deep(.ant-skeleton) {
+  padding: 24px;
 }
 </style>
