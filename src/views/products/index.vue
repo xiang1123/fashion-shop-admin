@@ -822,10 +822,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.product-container {
-  padding: 24px;
-}
-
 .action-area {
   margin-bottom: 16px;
   padding: 16px 24px;
