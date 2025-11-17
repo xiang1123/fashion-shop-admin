@@ -1,7 +1,7 @@
 /**
  * 订单状态
  */
-export type OrderStatus = 'PENDING' | 'PAID' | 'SHIPPING' | 'COMPLETED' | 'CANCELED'
+export type OrderStatus = 'UNPAID' | 'PAID' | 'SHIPPING' | 'COMPLETED' | 'CANCELED'
 
 /**
  * 订单项
