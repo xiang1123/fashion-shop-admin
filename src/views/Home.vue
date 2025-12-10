@@ -436,7 +436,7 @@ const getOrderStatusColor = (status: string) => {
 // 获取订单状态文本
 const getOrderStatusText = (status: string) => {
   const textMap: Record<string, string> = {
-    PENDING: '待支付',
+    UNPAID: '待支付',
     PAID: '已支付',
     SHIPPING: '配送中',
     COMPLETED: '已完成',
