@@ -660,7 +660,7 @@ const skuRules = {
   sku_code: [
     { required: true, message: '请输入 SKU 编码', trigger: 'blur' },
     {
-      pattern: /^[A-Z0-9-]+$/,
+      pattern: /^[\u4e00-\u99fa5A-Z0-9-]+$/,
       message: 'SKU 编码只能包含大写字母、数字和连字符',
       trigger: 'blur',
     },
