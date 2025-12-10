@@ -222,7 +222,7 @@ const fetchProductData = async () => {
     const res: any = await getProductList()
 
     if (res.code === 0 && res.data) {
-      totalProducts.value = res.data.length
+      totalProducts.value = res.data.total
     }
   } catch (error) {
     console.error('获取商品数据失败:', error)
@@ -440,7 +440,6 @@ const getOrderStatusText = (status: string) => {
     PAID: '已支付',
     SHIPPING: '配送中',
     COMPLETED: '已完成',
-    CANCELLED: '已取消',
     CANCELED: '已取消',
   }
   return textMap[status] || status
