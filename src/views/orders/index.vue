@@ -29,9 +29,7 @@
           </a-form-item>
           <a-form-item>
             <a-button type="primary" @click="handleSearch">搜索</a-button>
-            <a-button style="margin-left: 8px" @click="handleReset"
-              >重置</a-button
-            >
+            <a-button style="margin-left: 8px" @click="handleReset">重置</a-button>
           </a-form-item>
         </a-form>
       </div>
@@ -46,15 +44,11 @@
           row-key="id"
         >
           <template #orderNo="{ text }">
-            <a-typography-text copyable>
-              {{ text }}
-            </a-typography-text>
+            <a-typography-text copyable>{{ text }}</a-typography-text>
           </template>
 
           <template #status="{ text }">
-            <a-tag :color="getStatusColor(text)">
-              {{ getStatusText(text) }}
-            </a-tag>
+            <a-tag :color="getStatusColor(text)">{{ getStatusText(text) }}</a-tag>
           </template>
 
           <template #amount="{ text }">
@@ -68,9 +62,7 @@
           <template #action="{ record }">
             <a-space>
               <a @click="handleView(record)">详情</a>
-              <a v-if="record.status === 'PAID'" @click="handleShip(record)"
-                >发货</a
-              >
+              <a v-if="record.status === 'PAID'" @click="handleShip(record)">发货</a>
               <a-popconfirm
                 v-if="['PENDING', 'PAID'].includes(record.status)"
                 title="确定要取消这个订单吗？"
@@ -103,39 +95,21 @@
         </a-steps>
 
         <a-descriptions title="基础信息" bordered size="small" :column="2">
-          <a-descriptions-item label="订单号">{{
-            currentOrder.order_no
-          }}</a-descriptions-item>
+          <a-descriptions-item label="订单号">{{ currentOrder.order_no }}</a-descriptions-item>
           <a-descriptions-item label="下单时间">{{
             dayjs(currentOrder.created_at).format('YYYY-MM-DD HH:mm:ss')
           }}</a-descriptions-item>
-          <a-descriptions-item label="订单金额"
-            >¥{{
-              Number(currentOrder.amount_total).toFixed(2)
-            }}</a-descriptions-item
-          >
-          <a-descriptions-item label="实付金额"
-            ><span style="color: red; font-weight: bold"
-              >¥{{ Number(currentOrder.amount_payable).toFixed(2) }}</span
-            ></a-descriptions-item
-          >
-          <a-descriptions-item label="收货人">{{
-            currentOrder.receiver_name
-          }}</a-descriptions-item>
-          <a-descriptions-item label="联系电话">{{
-            currentOrder.receiver_phone
-          }}</a-descriptions-item>
-          <a-descriptions-item label="收货地址" :span="2">{{
-            currentOrder.address
-          }}</a-descriptions-item>
+          <a-descriptions-item label="订单金额">¥{{ Number(currentOrder.amount_total).toFixed(2) }}</a-descriptions-item>
+          <a-descriptions-item label="实付金额">
+            <span style="color: red; font-weight: bold">¥{{ Number(currentOrder.amount_payable).toFixed(2) }}</span>
+          </a-descriptions-item>
+          <a-descriptions-item label="收货人">{{ currentOrder.receiver_name }}</a-descriptions-item>
+          <a-descriptions-item label="联系电话">{{ currentOrder.receiver_phone }}</a-descriptions-item>
+          <a-descriptions-item label="收货地址" :span="2">{{ currentOrder.address }}</a-descriptions-item>
 
           <template v-if="currentOrder.ship_company">
-            <a-descriptions-item label="物流公司">{{
-              currentOrder.ship_company
-            }}</a-descriptions-item>
-            <a-descriptions-item label="物流单号">{{
-              currentOrder.ship_no
-            }}</a-descriptions-item>
+            <a-descriptions-item label="物流公司">{{ currentOrder.ship_company }}</a-descriptions-item>
+            <a-descriptions-item label="物流单号">{{ currentOrder.ship_no }}</a-descriptions-item>
           </template>
         </a-descriptions>
 
@@ -153,29 +127,14 @@
                 :src="record.product_image"
                 :width="60"
                 :height="60"
-                style="
-                  object-fit: cover;
-                  border-radius: 4px;
-                  border: 1px solid #f0f0f0;
-                  flex-shrink: 0;
-                "
+                style="object-fit: cover; border-radius: 4px; border: 1px solid #f0f0f0; flex-shrink: 0"
                 fallback="https://api.dicebear.com/7.x/shapes/svg?seed=Default"
               />
               <div style="margin-left: 12px; overflow: hidden">
-                <div
-                  style="
-                    font-weight: 500;
-                    margin-bottom: 4px;
-                    font-size: 14px;
-                    color: #1f1f1f;
-                  "
-                >
+                <div style="font-weight: 500; margin-bottom: 4px; font-size: 14px; color: #1f1f1f">
                   {{ record.title }}
                 </div>
-                <a-tag
-                  color="blue"
-                  style="border: none; background: #f0f5ff; color: #2f54eb"
-                >
+                <a-tag color="blue" style="border: none; background: #f0f5ff; color: #2f54eb">
                   {{ record.sku_info || '默认规格' }}
                 </a-tag>
               </div>
@@ -183,9 +142,7 @@
           </template>
 
           <template #price="{ text }">
-            <span style="font-family: Arial; font-weight: 500"
-              >¥{{ Number(text).toFixed(2) }}</span
-            >
+            <span style="font-family: Arial; font-weight: 500">¥{{ Number(text).toFixed(2) }}</span>
           </template>
         </a-table>
       </div>
@@ -206,10 +163,7 @@
         :wrapper-col="{ span: 17 }"
       >
         <a-form-item label="物流公司" name="company">
-          <a-select
-            v-model:value="shipForm.company"
-            placeholder="请选择或输入物流公司"
-          >
+          <a-select v-model:value="shipForm.company" placeholder="请选择或输入物流公司">
             <a-select-option value="顺丰速运">顺丰速运</a-select-option>
             <a-select-option value="中通快递">中通快递</a-select-option>
             <a-select-option value="圆通速递">圆通速递</a-select-option>
@@ -218,10 +172,7 @@
           </a-select>
         </a-form-item>
         <a-form-item label="物流单号" name="tracking_no">
-          <a-input
-            v-model:value="shipForm.tracking_no"
-            placeholder="请输入物流单号"
-          />
+          <a-input v-model:value="shipForm.tracking_no" placeholder="请输入物流单号" />
         </a-form-item>
       </a-form>
     </a-modal>
@@ -236,24 +187,19 @@ import type { FormInstance } from 'ant-design-vue'
 import { getOrders, getOrderDetail, shipOrder, cancelOrder } from '@/api/order'
 import type { OrderInfo, ShipParams } from '@/types/order'
 
-// 列表数据
 const list = ref<OrderInfo[]>([])
 const total = ref(0)
 const loading = ref(false)
 
-// 搜索条件
 const searchOrderNo = ref('')
 const searchStatus = ref<string | undefined>(undefined)
 
-// 分页参数
 const currentPage = ref(1)
 const pageSize = ref(10)
 
-// 当前订单
 const currentOrder = ref<any>(null)
 const detailVisible = ref(false)
 
-// 发货表单
 const shipVisible = ref(false)
 const shipFormRef = ref<FormInstance>()
 const shipForm = reactive<ShipParams>({ company: '', tracking_no: '' })
@@ -264,65 +210,21 @@ const shipRules = {
   tracking_no: [{ required: true, message: '请输入物流单号', trigger: 'blur' }],
 }
 
-// 主表格列定义
 const columns = [
   { title: 'ID', dataIndex: 'id', width: 80, align: 'center' },
-  {
-    title: '订单号',
-    dataIndex: 'order_no',
-    width: 200,
-    slots: { customRender: 'orderNo' },
-  },
+  { title: '订单号', dataIndex: 'order_no', width: 200, slots: { customRender: 'orderNo' } },
   { title: '收货人', dataIndex: 'receiver_name', width: 100 },
-  {
-    title: '订单金额',
-    dataIndex: 'amount_payable',
-    width: 120,
-    align: 'right',
-    slots: { customRender: 'amount' },
-  },
-  {
-    title: '状态',
-    dataIndex: 'status',
-    width: 100,
-    align: 'center',
-    slots: { customRender: 'status' },
-  },
-  {
-    title: '下单时间',
-    dataIndex: 'created_at',
-    width: 180,
-    align: 'center',
-    slots: { customRender: 'time' },
-  },
-  {
-    title: '操作',
-    key: 'action',
-    width: 180,
-    fixed: 'right',
-    align: 'center',
-    slots: { customRender: 'action' },
-  },
+  { title: '订单金额', dataIndex: 'amount_payable', width: 120, align: 'right', slots: { customRender: 'amount' } },
+  { title: '状态', dataIndex: 'status', width: 100, align: 'center', slots: { customRender: 'status' } },
+  { title: '下单时间', dataIndex: 'created_at', width: 180, align: 'center', slots: { customRender: 'time' } },
+  { title: '操作', key: 'action', width: 180, fixed: 'right', align: 'center', slots: { customRender: 'action' } },
 ]
 
-// 详情页商品列定义 (优化布局：单价/小计右对齐，数量居中)
 const itemColumns = [
   { title: '商品信息', slots: { customRender: 'productInfo' } },
-  {
-    title: '单价',
-    dataIndex: 'price',
-    width: 120,
-    align: 'right',
-    slots: { customRender: 'price' },
-  },
+  { title: '单价', dataIndex: 'price', width: 120, align: 'right', slots: { customRender: 'price' } },
   { title: '数量', dataIndex: 'quantity', width: 80, align: 'center' },
-  {
-    title: '小计',
-    dataIndex: 'total_price',
-    width: 120,
-    align: 'right',
-    slots: { customRender: 'price' },
-  },
+  { title: '小计', dataIndex: 'total_price', width: 120, align: 'right', slots: { customRender: 'price' } },
 ]
 
 const pagination = computed(() => ({
@@ -333,7 +235,6 @@ const pagination = computed(() => ({
   showTotal: (t: number) => `共 ${t} 条`,
 }))
 
-// 获取订单列表
 const fetchList = async () => {
   loading.value = true
   try {
@@ -359,6 +260,7 @@ const handleSearch = () => {
   currentPage.value = 1
   fetchList()
 }
+
 const handleReset = () => {
   searchOrderNo.value = ''
   searchStatus.value = undefined
@@ -399,6 +301,14 @@ const handleShipSubmit = async () => {
     message.success('发货成功')
     shipVisible.value = false
     fetchList()
+    
+    // 如果详情弹窗打开，刷新详情数据
+    if (detailVisible.value && currentOrder.value?.id === shipOrderId.value) {
+      const res: any = await getOrderDetail(shipOrderId.value)
+      if (res.code === 0) {
+        currentOrder.value = res.data
+      }
+    }
   } catch (e: any) {
     message.error(e.response?.data?.message || '发货失败')
   }
