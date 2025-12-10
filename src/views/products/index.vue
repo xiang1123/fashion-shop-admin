@@ -324,32 +324,25 @@ import { PlusOutlined } from '@ant-design/icons-vue'
 import type { FormInstance } from 'ant-design-vue'
 
 // API 导入
-import {
-  getProductList,
-  createProduct,
-  updateProduct,
-  deleteProduct,
-  getProductSkus,
-  createSku,
-  updateSku,
-  deleteSku,
-  updateSkuStock,
+import { 
+  getProductList, createProduct, updateProduct, deleteProduct,
+  getProductSkus, createSku, updateSku, deleteSku, updateSkuStock
 } from '@/api/products'
 import { getCategoryList } from '@/api/category'
 import type { ProductInfo, ProductFormData, SkuInfo } from '@/types/product'
 
 // --- 通用配置 ---
 const defaultImage = 'https://api.dicebear.com/7.x/shapes/svg?seed=Default'
-const sanitizeHtml = (html: string) =>
-  DOMPurify.sanitize(html, { ALLOWED_TAGS: [] })
+const sanitizeHtml = (html: string) => DOMPurify.sanitize(html, { ALLOWED_TAGS: [] })
 
 // --- 商品列表状态 ---
 const loading = ref(false)
 const list = ref<ProductInfo[]>([])
-const categoryTree = ref([])
+const categoryTree = ref([]) 
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
+const statusLoading = ref<Record<number, boolean>>({})
 
 // 搜索
 const queryParams = reactive({ q: '' })
@@ -360,13 +353,7 @@ const submitting = ref(false)
 const editingId = ref<number | null>(null)
 const formRef = ref<FormInstance>()
 const formData = reactive<ProductFormData>({
-  category_id: null,
-  title: '',
-  subtitle: '',
-  description: '',
-  cover_image: '',
-  status: 'DRAFT',
-  skus: [],
+  category_id: null, title: '', subtitle: '', description: '', cover_image: '', status: 'DRAFT', skus: []
 })
 
 // --- SKU 管理状态 ---
@@ -381,14 +368,7 @@ const skuSubmitting = ref(false)
 const editingSkuId = ref<number | null>(null)
 const skuFormRef = ref<FormInstance>()
 const skuFormData = reactive<SkuInfo>({
-  sku_code: '',
-  color: '',
-  size: '',
-  price: 0,
-  stock: 0,
-  image: '',
-  bar_code: '',
-  is_active: 1,
+  sku_code: '', color: '', size: '', price: 0, stock: 0, image: '', bar_code: '', is_active: 1
 })
 
 // --- 规则定义 ---
@@ -396,7 +376,7 @@ const rules = {
   category_id: [{ required: true, message: '请选择分类', trigger: 'change' }],
   title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
   cover_image: [{ required: true, message: '请输入主图', trigger: 'blur' }],
-  status: [{ required: true, message: '请选择状态', trigger: 'change' }],
+  status: [{ required: true, message: '请选择状态', trigger: 'change' }]
 }
 
 const skuRules = {
@@ -404,104 +384,56 @@ const skuRules = {
   color: [{ required: true, message: '请输入颜色', trigger: 'blur' }],
   size: [{ required: true, message: '请输入尺码', trigger: 'blur' }],
   price: [{ required: true, message: '请输入价格', trigger: 'change' }],
-  stock: [{ required: true, message: '请输入库存', trigger: 'change' }],
+  stock: [{ required: true, message: '请输入库存', trigger: 'change' }]
 }
 
 // --- 表格列定义 ---
 const columns = [
   { title: 'ID', dataIndex: 'id', width: 60, align: 'center' },
-  {
-    title: '封面',
-    dataIndex: 'cover_image',
-    width: 80,
-    slots: { customRender: 'cover' },
-    align: 'center',
-  },
+  { title: '封面', dataIndex: 'cover_image', width: 80, slots: { customRender: 'cover' }, align: 'center' },
   { title: '标题', dataIndex: 'title', slots: { customRender: 'title' } },
   { title: '分类', dataIndex: 'category_name', width: 100 },
-  {
-    title: '状态',
-    dataIndex: 'status',
-    width: 80,
-    slots: { customRender: 'status' },
-    align: 'center',
-  },
-  {
-    title: '创建时间',
-    dataIndex: 'created_at',
-    width: 160,
-    slots: { customRender: 'createdAt' },
-  },
-  {
-    title: '操作',
-    key: 'action',
-    width: 220,
-    fixed: 'right',
-    slots: { customRender: 'action' },
-  },
+  { title: '状态', dataIndex: 'status', width: 100, slots: { customRender: 'status' }, align: 'center' },
+  { title: '创建时间', dataIndex: 'created_at', width: 160, slots: { customRender: 'createdAt' } },
+  { title: '操作', key: 'action', width: 220, fixed: 'right', slots: { customRender: 'action' } }
 ]
 
 const skuColumns = [
-  {
-    title: '图片',
-    dataIndex: 'image',
-    width: 60,
-    slots: { customRender: 'skuImage' },
-  },
+  { title: '图片', dataIndex: 'image', width: 60, slots: { customRender: 'skuImage' } },
   { title: 'SKU编码', dataIndex: 'sku_code' },
   { title: '颜色', dataIndex: 'color', width: 80 },
   { title: '尺码', dataIndex: 'size', width: 80 },
-  {
-    title: '价格',
-    dataIndex: 'price',
-    width: 100,
-    slots: { customRender: 'price' },
-  },
-  {
-    title: '库存',
-    dataIndex: 'stock',
-    width: 80,
-    slots: { customRender: 'stock' },
-  },
-  {
-    title: '操作',
-    key: 'action',
-    width: 120,
-    slots: { customRender: 'skuAction' },
-  },
+  { title: '价格', dataIndex: 'price', width: 100, slots: { customRender: 'price' } },
+  { title: '库存', dataIndex: 'stock', width: 80, slots: { customRender: 'stock' } },
+  { title: '操作', key: 'action', width: 120, slots: { customRender: 'skuAction' } }
 ]
 
 // --- 计算属性 ---
-const modalTitle = computed(() => (editingId.value ? '编辑商品' : '新增商品'))
-const skuFormTitle = computed(() =>
-  editingSkuId.value ? '编辑 SKU' : '新增 SKU'
-)
+const modalTitle = computed(() => editingId.value ? '编辑商品' : '新增商品')
+const skuFormTitle = computed(() => editingSkuId.value ? '编辑 SKU' : '新增 SKU')
 const pagination = computed(() => ({
   total: total.value,
   current: currentPage.value,
   pageSize: pageSize.value,
   showSizeChanger: true,
-  showTotal: (t: number) => `共 ${t} 条`,
+  showTotal: (t: number) => `共 ${t} 条`
 }))
 
 // ======================= 方法实现 =======================
 
-// 1. 初始化数据
 const fetchCategories = async () => {
   try {
     const res: any = await getCategoryList()
     if (res.code === 0) categoryTree.value = buildTree(res.data)
-  } catch (e) {
-    console.error(e)
-  }
+  } catch (e) { console.error(e) }
 }
 
 const buildTree = (items: any[]) => {
   const map = new Map()
   const tree: any[] = []
   items.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
-  items.forEach((item) => map.set(item.id, { ...item, children: [] }))
-  map.forEach((item) => {
+  items.forEach(item => map.set(item.id, { ...item, children: [] }))
+  map.forEach(item => {
     if (item.parent_id === null) tree.push(item)
     else {
       const parent = map.get(item.parent_id)
@@ -509,7 +441,7 @@ const buildTree = (items: any[]) => {
     }
   })
   const clean = (nodes: any[]) => {
-    nodes.forEach((node) => {
+    nodes.forEach(node => {
       if (node.children.length === 0) delete node.children
       else clean(node.children)
     })
@@ -524,40 +456,42 @@ const fetchList = async () => {
     const res: any = await getProductList({
       page: currentPage.value,
       page_size: pageSize.value,
-      q: queryParams.q,
+      q: queryParams.q
     })
     if (res.code === 0) {
       list.value = res.data.list
       total.value = res.data.total
     }
-  } catch (e) {
-    message.error('获取商品列表失败')
-  } finally {
-    loading.value = false
-  }
+  } catch (e) { message.error('获取商品列表失败') }
+  finally { loading.value = false }
 }
 
-// 2. 商品表格操作
-const handleSearch = () => {
-  currentPage.value = 1
-  fetchList()
-}
+const handleSearch = () => { currentPage.value = 1; fetchList() }
 const handleTableChange = (pag: any) => {
   currentPage.value = pag.current
   pageSize.value = pag.pageSize
   fetchList()
 }
 
+const handleStatusChange = async (record: ProductInfo, checked: boolean) => {
+  const newStatus = checked ? 'ON_SALE' : 'OFF_SALE'
+  statusLoading.value[record.id] = true
+  try {
+    await updateProduct(record.id, { status: newStatus } as any)
+    record.status = newStatus
+    message.success(checked ? '已上架' : '已下架')
+  } catch (error) {
+    message.error('状态更新失败')
+    fetchList()
+  } finally {
+    statusLoading.value[record.id] = false
+  }
+}
+
 const handleAdd = () => {
   editingId.value = null
   Object.assign(formData, {
-    category_id: null,
-    title: '',
-    subtitle: '',
-    description: '',
-    cover_image: '',
-    status: 'DRAFT',
-    skus: [],
+    category_id: null, title: '', subtitle: '', description: '', cover_image: '', status: 'DRAFT', skus: []
   })
   modalVisible.value = true
 }
@@ -570,19 +504,13 @@ const handleEdit = (record: any) => {
     subtitle: record.subtitle,
     description: record.description,
     cover_image: record.cover_image,
-    status: record.status,
+    status: record.status
   })
   modalVisible.value = true
 }
 
 const handleDelete = async (id: number) => {
-  try {
-    await deleteProduct(id)
-    message.success('已删除')
-    fetchList()
-  } catch (e) {
-    message.error('删除失败')
-  }
+  try { await deleteProduct(id); message.success('已删除'); fetchList() } catch(e) { message.error('删除失败') }
 }
 
 const handleSubmit = async () => {
@@ -604,13 +532,10 @@ const handleSubmit = async () => {
     submitting.value = false
   }
 }
-const handleCancel = () => {
-  modalVisible.value = false
-}
+const handleCancel = () => { modalVisible.value = false }
 
 // ======================= SKU 管理逻辑 =======================
 
-// 打开 SKU 列表
 const handleManageSku = async (record: ProductInfo) => {
   currentProduct.value = record
   skuListVisible.value = true
@@ -622,53 +547,36 @@ const fetchSkuList = async (pid: number) => {
   try {
     const res: any = await getProductSkus(pid)
     if (res.code === 0) skuList.value = res.data
-  } finally {
-    skuLoading.value = false
-  }
+  } finally { skuLoading.value = false }
 }
 
-// 打开新增 SKU 弹窗
 const handleAddSku = () => {
   editingSkuId.value = null
-  // 默认值
-  Object.assign(skuFormData, {
-    sku_code: '',
-    color: '',
-    size: '',
-    price: 0,
-    stock: 100,
-    image: '',
-    bar_code: '',
-    is_active: 1,
-  })
+  Object.assign(skuFormData, { sku_code: '', color: '', size: '', price: 0, stock: 100, image: '', bar_code: '', is_active: 1 })
   skuFormVisible.value = true
 }
 
-// 打开编辑 SKU 弹窗
 const handleEditSku = (record: SkuInfo) => {
   editingSkuId.value = record.id
   Object.assign(skuFormData, record)
   skuFormVisible.value = true
 }
 
-// 提交 SKU (新增/更新)
+// 【核心修改】提交 SKU (增加前端查重 + 后端错误捕获)
 const handleSkuSubmit = async () => {
   try {
     await skuFormRef.value?.validate()
-
-    // 1. 【前端检查】SKU编码本地重复
-    // 遍历当前的 skuList，看是否已经有一样的 code（且不是自己）
-    const isDuplicate = skuList.value.some(
-      (item) =>
-        item.sku_code === skuFormData.sku_code && item.id !== editingSkuId.value
+    
+    // 1. 本地查重 (优化体验，不发请求)
+    const isDuplicate = skuList.value.some(item => 
+      item.sku_code === skuFormData.sku_code && item.id !== editingSkuId.value
     )
-    if (isDuplicate) {
-      message.error(`该商品下已存在编码为 ${skuFormData.sku_code} 的SKU`)
-      return
+    if (isDuplicate) { 
+      message.error(`当前商品下已存在编码为 ${skuFormData.sku_code} 的SKU`)
+      return 
     }
 
     skuSubmitting.value = true
-
     if (editingSkuId.value) {
       await updateSku(editingSkuId.value, skuFormData)
       message.success('SKU 更新成功')
@@ -681,58 +589,66 @@ const handleSkuSubmit = async () => {
     if (currentProduct.value) fetchSkuList(currentProduct.value.id)
   } catch (err: any) {
     console.error(err)
-    // 2. 【前端检查】捕获后端返回的全局重复错误
+    // 2. 捕获后端数据库错误 (全局查重)
     const msg = err.response?.data?.message || ''
-    // 如果是后端返回的唯一索引冲突
-    if (msg.includes('SKU编码') && msg.includes('已存在')) {
-      message.error(msg)
-    } else if (msg.includes('Duplicate entry')) {
-      message.error('SKU编码已存在（全局重复），请更换')
+    // 后端如果返回 Duplicate entry 或 IntegrityError
+    if (msg.includes('Duplicate entry') || msg.includes('SKU编码') || msg.includes('exists')) {
+       message.error(`SKU编码 ${skuFormData.sku_code} 已存在，请更换`)
     } else {
-      message.error(msg || '操作失败')
+       message.error(msg || '操作失败')
     }
-  } finally {
-    skuSubmitting.value = false
+  } finally { 
+    skuSubmitting.value = false 
   }
 }
 
-const handleSkuCancel = () => {
-  skuFormVisible.value = false
-}
+const handleSkuCancel = () => { skuFormVisible.value = false }
 
-// 删除 SKU
+// 【核心修改】删除 SKU (捕获外键引用错误)
 const handleDeleteSku = async (sid: number) => {
   try {
     await deleteSku(sid)
     message.success('SKU 已删除')
     if (currentProduct.value) fetchSkuList(currentProduct.value.id)
   } catch (err: any) {
-    console.error(err)
-    // 3. 【前端检查】捕获外键约束错误 (购物车/订单引用)
-    const msg =
-      err.response?.data?.message || JSON.stringify(err.response?.data) || ''
+    console.error('删除SKU失败:', err)
+    
+    // 解析错误信息
+    const msg = err.response?.data?.message || JSON.stringify(err.response?.data) || ''
     const status = err.response?.status
-
-    // 检查关键字：foreign key, constraint, 1451
-    if (
-      msg.includes('foreign key constraint') ||
-      msg.includes('1451') ||
-      (status === 500 && msg.includes('IntegrityError'))
-    ) {
+    
+    // 检查特征词：foreign key, constraint, 1451 (MySQL错误码)
+    if (msg.includes('foreign key') || msg.includes('constraint') || msg.includes('1451') || status === 500) {
       message.error({
-        content:
-          '无法删除：该 SKU 已被购物车或订单引用，请先处理相关数据或直接下架商品。',
-        duration: 5,
+        content: '无法删除：该 SKU 已被购物车或订单引用，请直接修改库存为0或下架商品。',
+        duration: 5 // 显示久一点
       })
     } else {
-      message.error({
-        content:
-          '无法删除：该 SKU 已被购物车或订单引用，请先处理相关数据或直接下架商品。',
-        duration: 5,
-      })
+      message.error('删除失败，请稍后重试')
     }
   }
 }
+
+const stockModalVisible = ref(false)
+const currentSku = ref<SkuInfo | null>(null)
+const newStock = ref(0)
+
+const handleUpdateStock = (record: SkuInfo) => {
+  currentSku.value = record
+  newStock.value = record.stock
+  stockModalVisible.value = true
+}
+
+const handleStockSubmit = async () => {
+  try {
+    if (!currentSku.value?.id) return
+    await updateSkuStock(currentSku.value.id, { stock: newStock.value })
+    message.success('库存已更新')
+    stockModalVisible.value = false
+    if (currentProduct.value) fetchSkuList(currentProduct.value.id)
+  } catch (e) { message.error('更新失败') }
+}
+const handleStockCancel = () => { stockModalVisible.value = false }
 
 onMounted(() => {
   fetchCategories()
