@@ -24,7 +24,7 @@
               <a-select-option value="PAID">已支付</a-select-option>
               <a-select-option value="SHIPPING">配送中</a-select-option>
               <a-select-option value="COMPLETED">已完成</a-select-option>
-              <a-select-option value="CANCELLED">已取消</a-select-option>
+              <a-select-option value="CANCELED">已取消</a-select-option>
             </a-select>
           </a-form-item>
           <a-form-item>
