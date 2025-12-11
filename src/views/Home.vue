@@ -462,6 +462,9 @@ const handleResize = () => {
 
 // 初始化
 onMounted(async () => {
+  // 【新增】监听窗口大小改变
+  window.addEventListener('resize', handleResize)
+
   // 先获取仪表盘数据
   await fetchDashboardData()
 
